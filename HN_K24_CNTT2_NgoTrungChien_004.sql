@@ -102,39 +102,40 @@ join categories c on b.category_id = c.category_id
 set lr.due_date = date_add(lr.due_date, interval 7 day)
 where c.category_name = 'van hoc'
 and lr.return_date is null;
-
 -- gia hạn 7 ngày cho sách văn học chưa trả
+
+-- xóa sách sau 10/2023
 delete from loan_records
 where return_date is not null and borrow_date < '2023-10-01';
 
--- xóa hồ sơ đã trả trước 10/2023
+-- PHẦN 2: TRUY VẤN DỮ LIỆU CƠ BẢN 
+-- câu 1
 select b.book_id, b.title, b.price
 from books b
 join categories c on b.category_id = c.category_id
 where c.category_name = 'it'
 and b.price > 200000;
 
--- PHẦN 2: TRUY VẤN DỮ LIỆU CƠ BẢN 
--- Câu 1
+-- câu 2
 select reader_id, full_name, email
 from readers
 where year(created_at) = 2022 and email like  '%@gmail.com';
 
--- Câu 2:
+-- câu 3
 select book_id, title, price
 from books
 order by price desc
 limit 5 offset 2;
 
 -- PHẦN 3: TRUY VẤN NÂNG CAO 
--- cÂU 1
+-- cÂU 2
 select c.category_name, sum(b.stock_quantity) total_stock
 from categories c
 join books b on c.category_id = b.category_id
 group by c.category_id, c.category_name
 having sum(b.stock_quantity) > 10;
 
--- cÂU 2: 
+-- cÂU 3: 
 select r.full_name
 from readers r
 join membership_details m on r.reader_id = m.reader_id
@@ -146,12 +147,12 @@ and r.reader_id not in (
     where b.price > 300000
 );
 
--- cÂU 3
+
+ -- pHẦN 4: INDEX VÀ VIEW
+ -- câu 1
 create index idx_loan_dates
 on loan_records (borrow_date, return_date);
-
--- pHẦN 4: INDEX VÀ VIEW
--- CÂU 1
+-- câu 2
 create view vw_overdue_loans as
 select lr.loan_id, r.full_name, b.title, lr.borrow_date, lr.due_date
 from loan_records lr
@@ -159,7 +160,9 @@ join readers r on lr.reader_id = r.reader_id
 join books b on lr.book_id = b.book_id
 where lr.return_date is null
 and curdate() > lr.due_date;
--- view sách quá hạn
+
+-- phần 5
+-- câu 1
 delimiter $$
 create trigger trg_after_loan_insert
 after insert on loan_records
@@ -170,8 +173,7 @@ begin
     where book_id = new.book_id;
 end$$
 
--- PHẦN 5: STRIGGER
--- trigger trừ tồn kho
+-- câu 2
 create trigger trg_prevent_delete_active_reader
 before delete on readers
 for each row
@@ -187,7 +189,8 @@ begin
     end if;
 end$$
 
--- trigger chặn xóa độc giả
+-- Phần 6: STORED PROCEDURE
+-- CÂU 1
 delimiter $$
 create procedure sp_check_availability(
     in p_book_id int,
