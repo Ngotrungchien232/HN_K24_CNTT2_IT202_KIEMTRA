@@ -1,184 +1,234 @@
--- tạo cơ sở dữ liệu mới 
-create database ThiKetThucMon;
-use ThiKetThucMon;
+create database thiketthucmon;
+-- tạo cơ sở dữ liệu
+use thiketthucmon;
+-- sử dụng cơ sở dữ liệu
 
--- PHẦN 1: TẠO BẢNG THEO ĐỀ BÀI YÊU CẦU 
--- 1. bảng độc giả 
-create table Readers (
-	reader_id int auto_increment primary key,
+-- PHẦN 1: TẠO BẢNG VÀ CƠ SỞ DỮ LIỆU MẪU 
+create table readers (
+    reader_id int auto_increment primary key,
+    -- khóa chính độc giả
     full_name varchar(50) not null,
+    -- họ tên độc giả
     email varchar(50) not null unique,
+    -- email không trùng
     phone_number varchar(10) not null unique,
-    created_at date not null -- ngày tạo tài khoản của người dùng 
+    -- số điện thoại không trùng
+    created_at date not null default (curdate())
+    -- ngày tạo tài khoản
 );
--- 2. bảng chi tiết thẻ thành viên 
-create table Membership_Details (
-	card_number varchar(10)  primary key,
-    reader_id int , -- là khóa ngoại 
-    ranks varchar(20) not null, -- LƯU Ý LÀ THÊM S ĐỂ TRÁNH TRÙNG VỚI CÁC BIẾN CÓ TRONG MY SQL
-    expiry_date date not null, -- hạn sử dụng tài khoản 
-    citizen_id int not null unique, -- gần như căn cước định danh 
-    -- tiến hành viết khóa phụ 
-     foreign key (reader_id) references Readers(reader_id)
+
+create table membership_details (
+    card_number varchar(10) primary key,
+    -- mã thẻ thành viên
+    reader_id int not null unique,
+    -- mỗi độc giả chỉ có 1 thẻ
+    ranks varchar(20) not null,
+    -- hạng thẻ
+    expiry_date date not null,
+    -- ngày hết hạn
+    citizen_id varchar(12) not null unique,
+    -- số cccd
+    foreign key (reader_id) references readers(reader_id)
+    -- khóa ngoại tới readers
 );
--- 3. bảng danh mục 
-create table Categories (
-	category_id int auto_increment primary key,
+
+create table categories (
+    category_id int auto_increment primary key,
+    -- mã danh mục
     category_name varchar(20) not null,
+    -- tên danh mục
     descriptions varchar(255) not null
+    -- mô tả danh mục
 );
--- 4. bảng sách 
-create table Books (
-	book_id int auto_increment primary key,
-    title varchar(20) not null, -- tên sách 
-    author varchar(50) not null, -- tên tác giả 
-    category_id int , -- mã danh mục là khóa phụ
-    price decimal(10,2) not null check(price > 0),
-    stock_quantity int not null check(stock_quantity >= 0),
-    -- tiến hành viết khóa phụ
-    foreign key (category_id) references Categories(category_id)
+
+create table books (
+    book_id int auto_increment primary key,
+    -- mã sách
+    title varchar(50) not null,
+    -- tên sách
+    author varchar(50) not null,
+    -- tác giả
+    category_id int not null,
+    -- mã danh mục
+    price decimal(10,2) not null check (price > 0),
+    -- giá sách > 0
+    stock_quantity int not null check (stock_quantity >= 0),
+    -- số lượng tồn kho
+    foreign key (category_id) references categories(category_id)
+    -- khóa ngoại danh mục
 );
--- 5. bảng hồ sơ mượn trả sách 
-create table Loan_Records (
-	loan_id int not null primary key, -- mã phiếu mượn 
+
+create table loan_records (
+    loan_id int primary key,
+    -- mã phiếu mượn
     reader_id int not null,
-    book_id int not null, 
-    borrow_date date not null, -- ngày mượn 
-    due_date date not null, -- đến hạn 
-    return_date date, -- ngày trả sách , có thể là k thèm chả luôn lên k có not null
-    -- tiến hành viết khóa phụ 
-    foreign key (reader_id) references Readers(reader_id),
-    foreign key (book_id) references Books(book_id)
+    -- mã độc giả
+    book_id int not null,
+    -- mã sách
+    borrow_date date not null,
+    -- ngày mượn
+    due_date date not null,
+    -- ngày dự kiến trả
+    return_date date,
+    -- ngày trả thực tế
+    check (due_date > borrow_date),
+    -- ngày trả phải sau ngày mượn
+    foreign key (reader_id) references readers(reader_id),
+    -- khóa ngoại độc giả
+    foreign key (book_id) references books(book_id)
+    -- khóa ngoại sách
 );
 
--- THÊM DỮ LIỆU MẪU CHO CÁC BẢNG 
--- 1. bảng dành cho độc giả ( người dùng ) 
-insert into Readers (full_name, email, phone_number, created_at) values
-('Nguyen Van A', 'anv@gmail.com', '901234567', '1/15/2022'),
-('Tran Thi B', 'btt@gmail.com', '912345678', '5/20/2022'),
-('Le Van C', 'cle@yahoo.com', '922334455', '2/10/2023'),
-('Pham Minh D', 'dpham@hotmail.com', '933445566', '11/5/2023'),
-('Hoang Anh E', 'ehoang@gmail.com', '944556677', '1/12/2024');
--- 2. bảng chi tiết thẻ thành viên
-insert into Membership_Details (card_number, reader_id, ranks, exprity_date, citizen_id) values
-('CARD-001', '1', 'Standard', '1/15/2025', '123456789'),
-('CARD-002', '2', 'VIP', '5/20/2025', '234567890'),
-('CARD-003', '3', 'Standard', '2/10/2024', '345678901'),
-('CARD-004', '4', 'VIP', '11/5/2025', '456789012'),
-('CARD-005', '5', 'Standard', '1/12/2026', '567890123');
--- 3. bảng danh mục sách 
-insert into Categories (category_name, descriptions) values
-('IT', 'Sách về công nghệ thông tin và lập trình'),
-('Kinh Te', 'Sách kinh doanh, tài chính, khởi nghiệp'),
-('Van Hoc', 'Tiểu thuyết, truyện ngắn, thơ'),
-('Ngoai Ngu', 'Sách học tiếng Anh, Nhật, Hàn'),
-('Lich Su', 'Sách nghiên cứu lịch sử, văn hóa');
--- 4. bảng sách 
-insert into Books (title, author, category_id,  price, stock_quantity) values
-('Clean Code', 'Robert C. Martin', '1', '450000', '10'),
-('Dac Nhan Tam', 'Dale Carnegie', '2', '150000', '50'),
-('Harry Potter 1', 'J.K. Rowling', '3', '250000', '5'),
-('IELTS Reading', 'Cambridge', '4', '180000', '0'),
-('Dai Viet Su Ky', 'Le Van Huu','5', '300000', '20');
--- 5. bảng hồ sơ mượn trả 
-insert into Loan_Records (loan_id, reader_id, book_id, borrow_date, due_date, return_date) values
-('101', '1', '1', '11/15/2023', '11/22/2023', '11/20/2023'),
-('102', '2', '2', '12/1/2023', '12/8/2023', '12/5/2023'),
-('103', '1', '3', '1/10/2024', '1/17/2024' ),
-('104', '3', '4', '5/20/2023', '5/27/2023'),
-('105', '4', '1', '1/18/2024', '1/25/2024');
+insert into readers values
+(null,'nguyen van a','anv@gmail.com','0901234567','2022-01-15'),
+(null,'tran thi b','btt@gmail.com','0912345678','2022-05-20'),
+(null,'le van c','cle@yahoo.com','0922334455','2023-02-10'),
+(null,'pham minh d','dpham@hotmail.com','0933445566','2023-11-05'),
+(null,'hoang anh e','ehoang@gmail.com','0944556677','2024-01-12');
+-- thêm dữ liệu độc giả
 
--- PHẦN 2: 
--- câu 1: 
+insert into membership_details values
+('card001',1,'standard','2025-01-15','123456789012'),
+('card002',2,'vip','2025-05-20','234567890123'),
+('card003',3,'standard','2024-02-10','345678901234'),
+('card004',4,'vip','2025-11-05','456789012345'),
+('card005',5,'standard','2026-01-12','567890123456');
+-- thêm dữ liệu thẻ thành viên
 
+insert into categories values
+(null,'it','sach cntt'),
+(null,'kinh te','sach kinh doanh'),
+(null,'van hoc','sach van hoc'),
+(null,'ngoai ngu','sach ngoai ngu'),
+(null,'lich su','sach lich su');
+-- thêm danh mục sách
 
+insert into books values
+(null,'clean code','robert c martin',1,450000,10),
+(null,'dac nhan tam','dale carnegie',2,150000,50),
+(null,'harry potter 1','j k rowling',3,250000,5),
+(null,'ielts reading','cambridge',4,180000,0),
+(null,'dai viet su ky','le van huu',5,300000,20);
+-- thêm sách
 
+insert into loan_records values
+(101,1,1,'2023-11-15','2023-11-22','2023-11-20'),
+(102,2,2,'2023-12-01','2023-12-08','2023-12-05'),
+(103,1,3,'2024-01-10','2024-01-17',null),
+(104,3,4,'2023-05-20','2023-05-27',null),
+(105,4,1,'2024-01-18','2024-01-25',null);
+-- thêm hồ sơ mượn trả
 
+update loan_records lr
+join books b on lr.book_id = b.book_id
+join categories c on b.category_id = c.category_id
+set lr.due_date = date_add(lr.due_date, interval 7 day)
+where c.category_name = 'van hoc'
+and lr.return_date is null;
+-- gia hạn 7 ngày cho sách văn học chưa trả
 
+delete from loan_records
+where return_date is not null
+and borrow_date < '2023-10-01';
+-- xóa hồ sơ đã trả trước 10/2023
 
+select b.book_id, b.title, b.price
+from books b
+join categories c on b.category_id = c.category_id
+where c.category_name = 'it'
+and b.price > 200000;
 
+-- PHẦN 2: TRUY VẤN DỮ LIỆU CƠ BẢN 
+-- Câu 1
+select reader_id, full_name, email
+from readers
+where year(created_at) = 2022
+and email like '%@gmail.com';
 
+-- Câu 2:
+select book_id, title, price
+from books
+order by price desc
+limit 5 offset 2;
 
+-- PHẦN 3: TRUY VẤN NÂNG CAO 
+-- cÂU 1
+select c.category_name, sum(b.stock_quantity) total_stock
+from categories c
+join books b on c.category_id = b.category_id
+group by c.category_id, c.category_name
+having sum(b.stock_quantity) > 10;
 
+-- cÂU 2: 
+select r.full_name
+from readers r
+join membership_details m on r.reader_id = m.reader_id
+where m.ranks = 'vip'
+and r.reader_id not in (
+    select lr.reader_id
+    from loan_records lr
+    join books b on lr.book_id = b.book_id
+    where b.price > 300000
+);
 
+-- cÂU 3
+create index idx_loan_dates
+on loan_records (borrow_date, return_date);
 
+-- pHẦN 4: INDEX VÀ VIEW
+-- CÂU 1
+create view vw_overdue_loans as
+select lr.loan_id, r.full_name, b.title, lr.borrow_date, lr.due_date
+from loan_records lr
+join readers r on lr.reader_id = r.reader_id
+join books b on lr.book_id = b.book_id
+where lr.return_date is null
+and curdate() > lr.due_date;
+-- view sách quá hạn
+delimiter $$
+create trigger trg_after_loan_insert
+after insert on loan_records
+for each row
+begin
+    update books
+    set stock_quantity = stock_quantity - 1
+    where book_id = new.book_id;
+end$$
 
+-- PHẦN 5: STRIGGER
+-- trigger trừ tồn kho
+create trigger trg_prevent_delete_active_reader
+before delete on readers
+for each row
+begin
+    if exists (
+        select 1
+        from loan_records
+        where reader_id = old.reader_id
+        and return_date is null
+    ) then
+        signal sqlstate '45000'
+        set message_text = 'doc gia van dang muon sach';
+    end if;
+end$$
+-- trigger chặn xóa độc giả
 
+delimiter $$
 
+create procedure sp_check_availability(
+    in p_book_id int,
+    out p_message varchar(50)
+)
+begin
+    declare v_stock int;
+    select stock_quantity into v_stock from books where book_id = p_book_id;
+    if v_stock = 0 then
+        set p_message = 'het hang';
+    elseif v_stock <= 5 then
+        set p_message = 'sap het';
+    else
+        set p_message = 'con hang';
+    end if;
+end$$
 
-
-
-
-
-
-
-
-
-PHẦN 1: THIẾT KẾ CSDL & CHÈN DỮ LIỆU (25 ĐIỂM)
-1. Thiết kế bảng (15 điểm): Dựa vào mô tả nghiệp vụ dưới đây, anh/chị hãy viết câu lệnh DDL để tạo CSDL với 5 bảng. Yêu cầu xác định đúng kiểu dữ liệu và thiết lập đầy đủ các ràng buộc (Khóa chính, Khóa ngoại, Check, Unique, Default).
-  - Bảng 1: Readers (Độc giả)
-    - Gồm: Mã độc giả (PK), Họ tên, Email (Unique), Số điện thoại, Ngày tạo tài khoản (Default là ngày hiện tại).
-  - Bảng 2: Membership_Details (Chi tiết thẻ thành viên)
-    - Gồm: Mã thẻ (PK), Mã độc giả (FK - Unique), Hạng thẻ (Ví dụ: 'Standard', 'VIP'), Ngày hết hạn thẻ, Số CCCD (Unique).
-    - Lưu ý: Mỗi độc giả chỉ có duy nhất một hồ sơ thẻ thành viên chi tiết.
-  - Bảng 3: Categories (Danh mục sách)
-    - Gồm: Mã danh mục (PK), Tên danh mục (Ví dụ: 'IT', 'Kinh tế', 'Văn học'), Mô tả.
-  - Bảng 4: Books (Sách) - Sản phẩm
-    - Gồm: Mã sách (PK), Tên sách, Tác giả, Mã danh mục (FK), Giá sách (>0), Số lượng tồn kho (>=0).
-  - Bảng 5: Loan_Records (Hồ sơ mượn trả)
-    - Gồm: Mã phiếu mượn (PK), Mã độc giả (FK), Mã sách (FK), Ngày mượn, Ngày dự kiến trả, Ngày thực trả (cho phép NULL nếu chưa trả).
-    - Ràng buộc: Ngày dự kiến trả phải sau Ngày mượn.
-2. DML (15 điểm): Viết Script chèn dữ liệu:
-
----
-  1. Bảng Độc giả (Readers)
-This content is only supported in a Lark Docs
-  2. Bảng Chi tiết thẻ thành viên (Membership_Details)
-This content is only supported in a Lark Docs
-  3. Bảng Danh mục sách (Categories)
-This content is only supported in a Lark Docs
-  4. Bảng Sách (Books)
-This content is only supported in a Lark Docs
-  5. Bảng Hồ sơ mượn trả (Loan_Records)
-This content is only supported in a Lark Docs
-  - Viết script INSERT để chèn dữ liệu mẫu vào 5 bảng (Sử dụng dữ liệu mẫu ở trên hoặc tự thêm sao cho đủ tối thiểu 5 bản ghi mỗi bảng).
-  - Gia hạn thêm 7 ngày cho due_date (Ngày dự kiến trả) đối với tất cả các phiếu mượn sách thuộc danh mục 'Van Hoc' mà chưa được trả (return_date IS NULL).
-  - Xóa các hồ sơ mượn trả (Loan_Records) đã hoàn tất trả sách (return_date KHÔNG NULL) và có ngày mượn trước tháng 10/2023.
-
----
-PHẦN 2: TRUY VẤN DỮ LIỆU CƠ BẢN (15 ĐIỂM)
-- Câu 1 (5đ): Viết câu lệnh lấy ra danh sách các cuốn sách (book_id, title, price) thuộc danh mục 'IT' và có giá bán lớn hơn 200.000 VNĐ.
-- Câu 2 (5đ): Lấy ra thông tin độc giả (reader_id, full_name, email) đã đăng ký tài khoản trong năm 2022 và có địa chỉ Email thuộc tên miền '@gmail.com'.
-- Câu 3 (5đ): Hiển thị danh sách 5 cuốn sách có giá trị cao nhất, sắp xếp theo thứ tự giảm dần. Yêu cầu sử dụng LIMIT và OFFSET để bỏ qua 2 cuốn sách đắt nhất đầu tiên (lấy từ cuốn thứ 3 đến thứ 7).
-
----
-PHẦN 3: TRUY VẤN DỮ LIỆU NÂNG CAO (20 ĐIỂM)
-- Câu 1 (6đ): Viết truy vấn để hiển thị các thông tin gômg: Mã phiếu, Tên độc giả, Tên sách, Ngày mượn, Ngày trả. Chỉ hiển thị các đơn mượn chưa trả sách.
-- Câu 2 (7đ): Tính tổng số lượng sách đang tồn kho (stock_quantity) của từng danh mục (category_name). Chỉ hiển thị những danh mục có tổng tồn kho lớn hơn 10.
-- Câu 3 (7đ): Tìm ra thông tin độc giả (full_name) có hạng thẻ là 'VIP' nhưng chưa từng mượn cuốn sách nào có giá trị lớn hơn 300.000 VNĐ.
-
----
-PHẦN 4: INDEX VÀ VIEW (10 ĐIỂM)
-- Câu 1 (5đ): Tạo một Composite Index đặt tên là idx_loan_dates trên bảng Loan_Records bao gồm hai cột: borrow_date và return_date để tăng tốc độ truy vấn lịch sử mượn.
-- Câu 2 (5đ): Tạo một View tên là vw_overdue_loans hiển thị: Mã phiếu, Tên độc giả, Tên sách, Ngày mượn, Ngày dự kiến trả. View này chỉ chứa các bản ghi mà ngày hiện tại (CURDATE) đã vượt quá ngày dự kiến trả và sách chưa được trả.
-
----
-PHẦN 5: TRIGGER (10 ĐIỂM)
-- Câu 1 (5đ): Viết Trigger trg_after_loan_insert. Khi một phiếu mượn mới được thêm vào bảng Loan_Records, hãy tự động trừ số lượng tồn kho (stock_quantity) của cuốn sách tương ứng trong bảng Books đi 1 đơn vị.
-- Câu 2 (5đ): Viết Trigger trg_prevent_delete_active_reader. Ngăn chặn việc xóa thông tin độc giả trong bảng Readers nếu độc giả đó vẫn còn sách đang mượn (tức là tồn tại bản ghi trong Loan_Records mà return_date là NULL). Gợi ý: Sử dụng SIGNAL SQLSTATE.
-
----
-PHẦN 6: STORED PROCEDURE (20 ĐIỂM)
-- Câu 1 (10đ): Viết Procedure sp_check_availability nhận vào Mã sách (p_book_id). Procedure trả về thông báo qua tham số OUT p_message:
-  - 'Hết hàng' nếu tồn kho = 0.
-  - 'Sắp hết' nếu 0 < tồn kho <= 5.
-  - 'Còn hàng' nếu tồn kho > 5.
-- Câu 2 (10đ): Viết Procedure sp_return_book_transaction để xử lý trả sách an toàn với Transaction:
-  - Input: p_loan_id.
-  - B1: Bắt đầu giao dịch (START TRANSACTION).
-  - B2: Kiểm tra xem phiếu mượn này đã được trả chưa. Nếu return_date không NULL, Rollback và báo lỗi "Sách đã trả rồi".
-  - B3: Cập nhật ngày trả (return_date) là ngày hiện tại trong bảng Loan_Records.
-  - B4: Cộng lại số lượng tồn kho (stock_quantity) lên 1 trong bảng Books (dựa vào book_id lấy từ phiếu mượn).
-  - B5: COMMIT nếu thành công. ROLLBACK nếu có lỗi xảy ra.
-
----
+delimiter ;
