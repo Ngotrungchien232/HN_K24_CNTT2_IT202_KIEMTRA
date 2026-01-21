@@ -196,15 +196,3 @@ create procedure sp_check_availability(
     in p_book_id int,
     out p_message varchar(50)
 )
-begin
-    declare v_stock int;
-    select stock_quantity into v_stock from books where book_id = p_book_id;
-    if v_stock = 0 then
-        set p_message = 'het hang';
-    elseif v_stock <= 5 then
-        set p_message = 'sap het';
-    else
-        set p_message = 'con hang';
-    end if;
-end$$
-delimiter ;
